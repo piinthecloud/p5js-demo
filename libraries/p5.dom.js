@@ -277,14 +277,14 @@
   };
 
   /**
-   * Creates an &lt;input&gt;&lt;/input&gt; element in the DOM of type 'file'.
+   * Creates an &lt;input&gt;&lt;/input&gt; element in the DOM of type 'file'.  
    * This allows users to select local files for use in a sketch.
-   *
+   * 
    * @method createFileInput
    * @param  {Function} [callback] callback function for when a file loaded
    * @param  {String} [multiple] optional to allow multiple files selected
    * @return {Object/p5.Element} pointer to p5.Element holding created DOM element
-   *
+   *                           
    */
   p5.prototype.createFileInput = function(callback, multiple) {
 
@@ -300,7 +300,7 @@
         // Anything gets the job done
         elt.multiple = 'multiple';
       }
-
+     
       // Now let's handle when a file was selected
       elt.addEventListener('change', handleFileSelect, false);
 
@@ -323,7 +323,7 @@
               callback(p5file);
             };
           };
-
+          
           // Text of data?
           // This should likely be improved
           if (f.type === 'text') {
@@ -435,97 +435,51 @@
 
   /**
    * Creates a new &lt;video&gt; element that contains the audio/video feed
-   * from a webcam. This can be drawn onto the canvas using video(). More
-   * specific properties of the stream can be passing in a Constraints object.
-   * See the
-   * <a href="http://w3c.github.io/mediacapture-main/getusermedia.html">W3C
-   * spec</a> for possible properties. Note that not all of these are supported
-   * by all browsers.
+   * from a webcam. This can be drawn onto the canvas using video().
    *
    * @method createCapture
-   * @param  {String/Constant|Object}   type type of capture, either VIDEO or
-   *                                    AUDIO if none specified, default both,
-   *                                    or a Constraints boject
-   * @param  {Function}                 callback function to be called once
-   *                                    stream has loaded
+   * @param  {String/Constant}   type type of capture, either VIDEO or
+   *                             AUDIO if none specified, default both
    * @return {Object/p5.Element} capture video p5.Element
-   * @example
-   * <div><class='norender'><code>
-   * var capture;
-   *
-   * function setup() {
-   *   createCanvas(480, 120);
-   *   capture = createCapture(VIDEO);
-   * }
-   *
-   * function draw() {
-   *   image(capture, 0, 0, width, width*capture.height/capture.width);
-   *   filter(INVERT);
-   * }
-   * </code></div>
-   * <div><class='norender'><code>
-   * function setup() {
-   *   createCanvas(480, 120);
-   *   var constraints = {
-   *     video: {
-   *       mandatory: {
-   *         minWidth: 1280,
-   *         minHeight: 720
-   *       },
-   *       optional: [
-   *         { maxFrameRate: 10 }
-   *       ]
-   *     },
-   *     audio: true
-   *   };
-   *   createCapture(constraints, function(stream) {
-   *     console.log(stream);
-   *   });
-   * }
-   * </code></div>
    */
   p5.prototype.createCapture = function() {
-    var useVideo = true;
-    var useAudio = true;
-    var constraints;
-    var cb;
-    for (var i=0; i<arguments.length; i++) {
-      if (arguments[i] === p5.prototype.VIDEO) {
-        useAudio = false;
-      } else if (arguments[i] === p5.prototype.AUDIO) {
-        useVideo = false;
-      } else if (typeof arguments[i] === 'object') {
-        constraints = arguments[i];
-      } else if (typeof arguments[i] === 'function') {
-        cb = arguments[i];
-      }
+    var useVideo, useAudio;
+    var type = arguments[0];
+    if (type === p5.prototype.VIDEO) {
+      useVideo = true;
+    } else if (type === p5.prototype.AUDIO) {
+      useAudio = true;
+    } else {
+      useVideo = true;
+      useAudio = true;
+    }
+
+    var fps;
+    if (typeof arguments[0] === 'number') {
+      fps = arguments[0];
+    } else if (arguments.length == 2 && typeof arguments[1] === 'number') {
+      fps = arguments[1];
     }
 
     if (navigator.getUserMedia) {
       var elt = document.createElement('video');
 
-      if (!constraints) {
-        constraints = {video: useVideo, audio: useAudio};
-      }
+      var constraints;
+      // if (fps) {
+      //   constraints = { mandatory: { minFrameRate: 1, maxFrameRate: fps } };
+      // }
 
-      navigator.getUserMedia(constraints, function(stream) {
+      useVideo = constraints || useVideo;
+
+      navigator.getUserMedia({video: useVideo, audio: useAudio}, function(stream) {
         elt.src = window.URL.createObjectURL(stream);
         elt.play();
-        if (cb) {
-          cb(stream);
-        }
       }, function(e) { console.log(e); });
     } else {
       throw 'getUserMedia not supported in this browser';
     }
     var c = addElement(elt, this, true);
-    c.loadedmetadata = false;
-    // set width and height onload metadata
-    elt.addEventListener('loadedmetadata', function() {
-      c.width = elt.videoWidth;
-      c.height = elt.videoHeight;
-      c.loadedmetadata = true;
-    });
+    c.loadedmetadata = true;
     return c;
   };
 
